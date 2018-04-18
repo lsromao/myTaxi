@@ -26,7 +26,7 @@ jobs:
       - store_artifacts:
           path: app/build/outputs/apk/
           destination: /apk/
-	  - run:
+      - run:
           name: Set Google Cloud target project
           command: gcloud config set project shining-axis-201214
       - run:
