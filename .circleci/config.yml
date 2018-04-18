@@ -54,6 +54,13 @@ references:
       - image: circleci/android:api-26-alpha
     environment:
       JVM_OPTS: -Xmx3200m
+      
+  gcloud_config: &gcloud_config
+    working_directory: *workspace
+    docker:
+      - image: google/cloud-sdk:latest
+    environment:
+      TERM: dumb
 
   export_gcloud_key: &export_gcloud_key
     run:
