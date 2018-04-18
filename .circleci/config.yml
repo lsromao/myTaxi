@@ -65,7 +65,7 @@ references:
       name: Decode Google Cloud credentials
       command: echo $GCLOUD_SERVICE_KEY | base64 -di > app/key.json
       
-  dependencies_permision: &decode_gcloud_key
+  dependencies_permision: &dependencies_permision
     run:
       name: Chmod permissions
       command: sudo chmod +x ./gradlew
