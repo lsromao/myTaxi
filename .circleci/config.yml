@@ -1,37 +1,128 @@
 version: 2
-jobs:
-  build:
-    working_directory: ~/code
+references:
+  ## Cache
+  cache_key: &cache_key
+    key: cache-{{ checksum "build.gradle" }}-{{ checksum "app/build.gradle" }}
+  restore_cache: &restore_cache
+    restore_cache:
+      <<: *cache_key
+  save_cache: &save_cache
+    save_cache:
+      <<: *cache_key
+      paths:
+        - ~/.gradle
+        - ~/.m2
+
+  workspace: &workspace
+    ~/workspace
+  attach_debug_workspace: &attach_debug_workspace
+    attach_workspace:
+      at: *workspace
+
+  attach_release_workspace: &attach_release_workspace
+    attach_workspace:
+      at: *workspace
+
+  persist_debug_workspace: &persist_debug_workspace
+    persist_to_workspace:
+      root: *workspace
+      paths:
+        - app/build/outputs/androidTest-results
+        - app/build/outputs/apk
+        - app/build/outputs/code-coverage
+        - app/build/test-results
+
+  persist_release_workspace: &persist_release_workspace
+    persist_to_workspace:
+      root: *workspace
+      paths:
+        - app/build
+
+  attach_firebase_workspace: &attach_firebase_workspace
+    attach_workspace:
+      at: *workspace
+
+  persist_firebase_workspace: &persist_firebase_workspace
+    persist_to_workspace:
+      root: *workspace
+      paths:
+        - firebase
+
+  android_config: &android_config
+    working_directory: *workspace
     docker:
       - image: circleci/android:api-26-alpha
     environment:
       JVM_OPTS: -Xmx3200m
+
+  export_gcloud_key: &export_gcloud_key
+    run:
+      name: Export Google Cloud Service key environment variable
+      command: echo 'export GCLOUD_SERVICE_KEY="$GCLOUD_SERVICE_KEY"' >> $BASH_ENV
+
+  decode_gcloud_key: &decode_gcloud_key
+    run:
+      name: Decode Google Cloud credentials
+      command: echo $GCLOUD_SERVICE_KEY | base64 -di > app/key.json
+      
+  dependencies_permision: &decode_gcloud_key
+    run:
+      name: Chmod permissions
+      command: sudo chmod +x ./gradlew
+
+jobs:
+  # Build debug APK for unit tests and an instrumented test APK
+  build_debug:
+    <<: *android_config
     steps:
       - checkout
-      - restore_cache:
-          key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
+      - *restore_cache
+      - *dependencies_permision
       - run:
-         name: Chmod permissions #if permission for Gradlew Dependencies fail, use this. 
-         command: sudo chmod +x ./gradlew
-      - run:
-          name: Download Dependencies
+          name: Download dependencies
           command: ./gradlew androidDependencies
-      - save_cache:
-          paths:
-            - ~/.gradle
-          key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
+      - *save_cache
       - run:
           name: Gradle build (debug)
           command: ./gradlew -PciBuild=true :app:assembleDebug :app:assembleAndroidTest
+      - *persist_debug_workspace
       - store_artifacts:
           path: app/build/outputs/apk/
           destination: /apk/
+    # ...
+  # Build release APK
+  #build_release:
+    # ...
+  # Run unit tests
+  test_unit:
+    <<: *android_config
+    steps:
+      - checkout
+      - *restore_cache
       - run:
-          name: Export Google Services key environment variable
-          command: echo 'export GOOGLE_SERVICES_KEY="$GOOGLE_SERVICES_KEY"' >> $BASH_ENV
+         name: Chmod permissions 
+         command: sudo chmod +x ./gradlew
       - run:
-          name: Decode Google Services key
-          command: echo $GOOGLE_SERVICES_KEY | base64 --decode > ${HOME}/key.json
+          name: Download dependencies
+          command: ./gradlew androidDependencies
+      - *save_cache
+      - run:
+          name: Run unit tests
+          command: ./gradlew -PciBuild=true :app:testDebugUnitTest
+      - *persist_debug_workspace
+      - store_artifacts:
+          path: app/build/reports/
+          destination: /reports/
+      - store_test_results:
+          path: app/build/test-results/
+          destination: /test-results/
+  # Run instrumented tests
+  test_instrumented:
+    <<: *gcloud_config
+    steps:
+      - *attach_debug_workspace
+      - *export_gcloud_key
+      - *decode_gcloud_key
       - run:
           name: Set Google Cloud target project
           command: gcloud config set project shining-axis-201214
@@ -40,21 +131,14 @@ jobs:
           command: gcloud auth activate-service-account android-demo-001@shining-axis-201214.iam.gserviceaccount.com --key-file ${HOME}/key.json
       #- run:
       #    name: Run instrumented test on Firebase Test Lab
-      #    command: gcloud firebase test android run --type instrumentation --app app/build/outputs/apk/debug/app-debug.apk --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk --device model=Nexus6,version=25,locale=en,orientation=portrait --timeout 20m
+      #    command: gcloud firebase test android run --type instrumentation --app app/build/outputs/apk/debug/app-debug.apk --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk --device model=Nexus6,version=26,locale=en,orientation=portrait --timeout 20m
       - run:
           name: Create directory to store test results
           command: mkdir firebase
       - run:
           name: Download instrumented test results from Firebase Test Lab
-          command: gsutil -m cp -r -U "`gsutil ls gs://test-lab-079rh7ubrp316-j9zmnsn7uhf04 | tail -1`*" app/firebase/
+          command: gsutil -m cp -r -U "`gsutil ls gs://test-lab-py909cw25p0xs-m5f0d7r0iur8i | tail -1`*" /root/workspace/firebase/
+      - *persist_firebase_workspace
       - store_artifacts:
           path: firebase/
           destination: /firebase/
-      - run:
-          name: Run Tests
-          command: ./gradlew lint test
-      - store_artifacts:
-          path: app/build/reports
-          destination: reports
-      - store_test_results:
-          path: app/build/test-results
