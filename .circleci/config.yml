@@ -31,7 +31,7 @@ jobs:
           command: echo 'export GOOGLE_SERVICES_KEY="$GOOGLE_SERVICES_KEY"' >> $BASH_ENV
       - run:
           name: Decode Google Services key
-          command: echo $GOOGLE_SERVICES_KEY | base64 -di > app/key.json
+          command: echo $GOOGLE_SERVICES_KEY | base64 --decode > ${HOME}/app/key.json
       - run:
           name: Set Google Cloud target project
           command: gcloud config set project shining-axis-201214
