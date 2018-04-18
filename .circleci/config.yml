@@ -37,7 +37,7 @@ jobs:
           command: gcloud config set project shining-axis-201214
       - run:
           name: Authenticate with Google Cloud
-          command: gcloud auth activate-service-account android-demo-001@shining-axis-201214.iam.gserviceaccount.com --key-file ${HOME}/key.json
+          command: gcloud auth activate-service-account android-demo-001@shining-axis-201214.iam.gserviceaccount.com --key-file ${HOME}/app/key.json
       - run:
           name: Run instrumented test on Firebase Test Lab
           command: gcloud firebase test android run --type instrumentation --app app/build/outputs/apk/debug/app-debug.apk --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk --device model=Nexus6,version=26,locale=en,orientation=portrait --timeout 20m
