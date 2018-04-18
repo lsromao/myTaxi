@@ -70,7 +70,7 @@ references:
   decode_gcloud_key: &decode_gcloud_key
     run:
       name: Decode Google Cloud credentials
-      command: echo $GCLOUD_SERVICE_KEY | base64 -di > app/key.json
+      command: echo $GCLOUD_SERVICE_KEY | base64 -di > ${HOME}/key.json
       
   dependencies_permision: &dependencies_permision
     run:
