@@ -22,7 +22,7 @@ jobs:
           key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
       - run:
           name: Gradle build (debug)
-          command: ./gradlew -PciBuild=true :mobile:assembleDebug :mobile:assembleAndroidTest
+          command: ./gradlew -PciBuild=true :app:assembleDebug :app:assembleAndroidTest
       - store_artifacts:
           path: app/build/outputs/apk/
           destination: /apk/
