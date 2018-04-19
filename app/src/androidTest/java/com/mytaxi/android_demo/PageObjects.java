@@ -21,44 +21,45 @@ public class PageObjects {
     private int textSearch= (R.id.textSearch);
     private int driverName = (R.id.textViewDriverName);
 
-    public void checkLoginPage(){
+    protected void checkLoginPage(){
         onView(withId(userName)).check(matches(isDisplayed()));
         onView(withId(password)).check(matches(isDisplayed()));
         onView(withId(loginBtn)).check(matches(isDisplayed()));
     }
 
-    public void enterUserName(String name){
+    protected void enterUserName(String name){
         onView(withId(userName))
                 .perform(typeText(name), closeSoftKeyboard());
     }
 
-    public void enterPassword(String pass){
+    protected void enterPassword(String pass){
         onView(withId(password))
                 .perform(typeText(pass), closeSoftKeyboard());
     }
 
-    public void clickLoginBtn() throws Exception{
+    protected void clickLoginBtn() throws Exception{
         onView(withId(loginBtn)).perform(click());
+        //TODO: Implement Idlingresource
         Thread.sleep(700);
         onView(withId(textSearch)).check(matches(isDisplayed()));
     }
 
-    public void searchTextSearch(String criteria){
-        onView(withId(R.id.textSearch))
+    protected void searchTextSearch(String criteria){
+        onView(withId(textSearch))
                 .perform(typeText(criteria), closeSoftKeyboard());
     }
 
-    public void findDriver(String name){
+    protected void findDriver(String name){
         onView(withText(name))
                 .inRoot(RootMatchers.isPlatformPopup())
                 .perform(click());
     }
 
-    public void checkDriver(String name){
+    protected void checkDriver(String name){
         onView(withId(driverName)).check(matches(withText(name)));
     }
 
-    public void clickCallDriver(){
+    protected void clickCallDriver(){
         onView(withId(R.id.fab)).perform(click());
     }
 }
