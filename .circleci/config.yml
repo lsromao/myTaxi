@@ -1,6 +1,6 @@
 version: 2
 references:
-  ## Cache
+  ## Cache -
   cache_key: &cache_key
     key: cache-{{ checksum "build.gradle" }}-{{ checksum "app/build.gradle" }}
   restore_cache: &restore_cache
